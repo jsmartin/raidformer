@@ -85,7 +85,8 @@ def initialize_filesystem(cmds, wipe, md_device, volgroup,logvol, format_cmds, f
 options, args = get_options()
 
 format_cmds = {
-    "ext4": "mkfs.ext4 -j"
+    "ext4": "mkfs.ext4 -j",
+    "xfs": "mkfs.xfs"
 }
 
 #device lettering
