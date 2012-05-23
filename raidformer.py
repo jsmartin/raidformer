@@ -177,8 +177,7 @@ cmds = []
 if options.raidlevel:
     cmds = initialize_raid(cmds, options.md_device, options.raidlevel, options.count, attached_devices )
 
-if options.wipe:
-    cmds = initialize_filesystem(cmds, options.wipe, options.md_device, options.volgroup,options.logvol, format_cmds, options.filesystem, options.mountpoint)
+cmds = initialize_filesystem(cmds, options.wipe, options.md_device, options.volgroup,options.logvol, format_cmds, options.filesystem, options.mountpoint)
 
 
 for cmd in cmds:
