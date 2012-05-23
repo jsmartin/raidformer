@@ -30,27 +30,27 @@ def get_options():
 
     parser.add_option("-a", "--attach",  action="store_true",
         dest="attach", default=False, help="Do the volume creation and attachment.")
-    parser.add_option("-c", "--count", action="store", type="int", \
+    parser.add_option("-c", "--count", action="store", type="int",
         dest="count", help="Number of EBS volumes ")
-    parser.add_option("-d", "--device", action="store", type="string", \
+    parser.add_option("-d", "--device", action="store", type="string",
         dest="device", default="/dev/sdf",  help="block device to start with")
-    parser.add_option("-f", "--filesystem", action="store", type="string", \
+    parser.add_option("-f", "--filesystem", action="store", type="string",
         dest="filesystem", default="ext4", help="filesystem type")
-    parser.add_option("-l", "--logvol", action="store", type="string", \
+    parser.add_option("-l", "--logvol", action="store", type="string",
         dest="logvol", default="LogVolData", help="Logical Volume Name")
-    parser.add_option("-m", "--mountpoint", action="store", type="string", \
+    parser.add_option("-m", "--mountpoint", action="store", type="string",
         dest="mountpoint", help="Mountpoint")
-    parser.add_option("", "--md", action="store", type="string", \
+    parser.add_option("", "--md", action="store", type="string",
         dest="md_device", default="/dev/md0", help="md device name ")
-    parser.add_option("-r", "--raidlevel", action="store", type="int", \
+    parser.add_option("-r", "--raidlevel", action="store", type="int",
         dest="raidlevel", help="RAID level")
-    parser.add_option("-s", "--size", action="store", type="int", \
+    parser.add_option("-s", "--size", action="store", type="int",
         dest="size", help="Size of EBS volumes ")
     parser.add_option("-t", "--test",  action="store_true",
         dest="test", default=False, help="Does a dry run of the mdadm lvm commands.")
-    parser.add_option("", "--tag", action="store", type="string", \
+    parser.add_option("", "--tag", action="store", type="string",
         dest="tag", default="ebs_raid", help="Tag name for the ebs devices")
-    parser.add_option("-v", "--volgroup", action="store", type="string", \
+    parser.add_option("-v", "--volgroup", action="store", type="string",
         dest="volgroup", default="VolGroupData", help="Volume Group Name")
     parser.add_option("-w", "--wipe",  action="store_true",
         dest="wipe", default=False, help="format the new filesystem")
@@ -148,7 +148,7 @@ if (options.attach or options.snapshot) and not options.test:
     for key, device in enumerate(my_devices):
         print "Working on ", device
         if my_snapshots:
-          vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'], snapshot=my_devices[key])
+          vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'], snapshot=my_snapshots[key])
         else:
           vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'])
         print "Created:", vol.id
