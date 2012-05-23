@@ -74,7 +74,7 @@ def initialize_filesystem(cmds, wipe, md_device, volgroup,logvol, format_cmds, f
     if wipe == True:
         cmds.append("%s /dev/%s/%s" % (format_cmds[filesystem],volgroup, logvol))
 
-    cmds.append('echo "/dev/%s/%s %s       %s    defaults        1 1" >> /etc/fstab' % (volgroup, logvol, mountpoint, filesystem) )
+    cmds.append('echo "/dev/%s/%s %s       %s    %s        1 1" >> /etc/fstab' % (volgroup, logvol, mountpoint, filesystem, format_fstab_settings[filesystem]) )
     cmds.append('mount %s' % mountpoint)
     if not os.path.isdir(mountpoint):
         print "creating mountpoint: %s" % mountpoint
@@ -87,6 +87,11 @@ options, args = get_options()
 format_cmds = {
     "ext4": "mkfs.ext4 -j",
     "xfs": "mkfs.xfs"
+}
+
+format_fstab_settings = {
+    "ext4": "defaults",
+    "xfs": "noatime,noexec,nodiratime"
 }
 
 #device lettering
