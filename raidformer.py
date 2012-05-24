@@ -5,9 +5,7 @@ import optparse
 import sys
 from boto import ec2
 import boto.utils
-import pprint
 from subprocess import Popen, PIPE, STDOUT
-import string
 import os.path
 import glob
 
@@ -31,7 +29,7 @@ def get_options():
     parser.add_option("-a", "--attach",  action="store_true",
         dest="attach", default=False, help="Do the volume creation and attachment.")
     parser.add_option("-c", "--count", action="store", type="int",
-        dest="count", help="Number of EBS volumes ")
+        dest="count", default=1, help="Number of EBS volumes ")
     parser.add_option("-d", "--device", action="store", type="string",
         dest="device", default="/dev/sdf",  help="block device to start with")
     parser.add_option("-f", "--filesystem", action="store", type="string",
@@ -119,9 +117,7 @@ my_snapshots = []
 
 if options.snapshot:
   my_snapshots = options.snapshot.split(',')
-  if len(my_snapshots) != options.count:
-    print "Value of --count=%s does not match the number of snapshot volumes provided %s" % (options.count, options.snapshot)
-    sys.exit(1)
+  options.count = len(my_snapshots)
 
   if options.wipe:
     print "Cowardly will not wipe volumes created from snapshots. Loose the --wipe option if you want to restore from snapshots."
@@ -132,8 +128,6 @@ my_devices = []
 
 for n in range(1, options.count + 1):
     my_devices.append(options.device + str(n) )
-
-print my_devices
 
 instance_data = boto.utils.get_instance_metadata()
 
@@ -146,17 +140,18 @@ vol_ids = []
 if (options.attach or options.snapshot) and not options.test:
 
     for key, device in enumerate(my_devices):
-        print "Working on ", device
         if my_snapshots:
-          vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'], snapshot=my_snapshots[key])
+          snapshot = my_snapshots[key]
+          print "Restoring snapshot %s to device %s" % (device, snapshot)
+          vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'], snapshot=snapshot)
         else:
+          print "Creating new volume on device ", device
           vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'])
-        print "Created:", vol.id
+        print "Created volume: ", vol.id
         ec2conn.attach_volume(vol.id, instance_data['instance-id'], device)
-        print "Attached:", vol.id
+        print "Attached volume: ", vol.id
         vol_ids.append(vol.id)
         vol.add_tag("Name", options.tag)
-
 
     
     for device in attached_devices:
