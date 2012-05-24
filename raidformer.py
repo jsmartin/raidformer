@@ -52,9 +52,9 @@ def get_options():
         dest="volgroup", default="VolGroupData", help="Volume Group Name")
     parser.add_option("-w", "--wipe",  action="store_true",
         dest="wipe", default=False, help="format the new filesystem")
-    parser.add_option("-S", "--snapshot",  action="store",
+    parser.add_option("", "--from-snapshot",  action="store",
         dest="snapshot", default=None,
-        help="Create volumes from csvlist of ebs snapshots (number of volumes must match count). Volumes will be assigned to devices in order")
+        help="Create volumes from one or more ebs snapshots. Order preservation is essential")
 
     options, args = parser.parse_args()
 
