@@ -123,6 +123,11 @@ if options.snapshot:
         print "Cowardly will not wipe volumes created from snapshots. Loose the --wipe option if you want to restore from snapshots."
         sys.exit(1)
 
+even_number_raidlevels = [10]
+
+if options.raidlevel in even_number_raidlevels and options.count % 2 != 0:
+    print "Number of volumes to be created in not compatible with raid level %s" % options.raidlevel
+    sys.exit(1)
 
 my_devices = []
 
