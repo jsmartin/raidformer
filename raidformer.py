@@ -101,27 +101,27 @@ format_fstab_settings = {
 devices = [ '/dev/sdf', '/dev/sdg', '/dev/sdh', '/dev/sdi', '/dev/sdj', '/dev/sdk', '/dev/sdl', '/dev/sdm', '/dev/sdn', '/dev/sdo', '/dev/sdp' ]
 
 if not options.device in devices:
-  print "You must use a valid device.  See http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/ebs-attaching-volume.html."
-  sys.exit(1)
+    print "You must use a valid device.  See http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/ebs-attaching-volume.html."
+    sys.exit(1)
 
 if options.attach == True:
     if len(glob.glob(options.device)) > 0:
-      print "You already have devices that start with %s." % options.device
-      sys.exit(1)
+        print "You already have devices that start with %s." % options.device
+        sys.exit(1)
     
 if os.path.exists(options.md_device):
-  print "Device %s already exists." % options.md_device
-  sys.exit(1)
+    print "Device %s already exists." % options.md_device
+    sys.exit(1)
 
 my_snapshots = []
 
 if options.snapshot:
-  my_snapshots = options.snapshot.split(',')
-  options.count = len(my_snapshots)
+    my_snapshots = options.snapshot.split(',')
+    options.count = len(my_snapshots)
 
-  if options.wipe:
-    print "Cowardly will not wipe volumes created from snapshots. Loose the --wipe option if you want to restore from snapshots."
-    sys.exit(1)
+    if options.wipe:
+        print "Cowardly will not wipe volumes created from snapshots. Loose the --wipe option if you want to restore from snapshots."
+        sys.exit(1)
 
 
 my_devices = []
@@ -141,12 +141,12 @@ if (options.attach or options.snapshot) and not options.test:
 
     for key, device in enumerate(my_devices):
         if my_snapshots:
-          snapshot = my_snapshots[key]
-          print "Restoring snapshot %s to device %s" % (device, snapshot)
-          vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'], snapshot=snapshot)
+            snapshot = my_snapshots[key]
+            print "Restoring snapshot %s to device %s" % (device, snapshot)
+            vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'], snapshot=snapshot)
         else:
-          print "Creating new volume on device ", device
-          vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'])
+            print "Creating new volume on device ", device
+            vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'])
         print "Created volume: ", vol.id
         ec2conn.attach_volume(vol.id, instance_data['instance-id'], device)
         print "Attached volume: ", vol.id
@@ -178,5 +178,5 @@ cmds = initialize_filesystem(cmds, options.wipe, options.md_device, options.volg
 for cmd in cmds:
     print 'Running:', cmd
     if options.test == False:
-      output = runcmd(cmd)
-      print output
+        output = runcmd(cmd)
+        print output
