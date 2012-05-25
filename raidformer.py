@@ -174,8 +174,7 @@ if (options.attach or options.snapshot) and not options.test:
     
 cmds = []
 
-if options.raidlevel:
-    cmds = initialize_raid(cmds, options.md_device, options.raidlevel, options.count, attached_devices )
+cmds = initialize_raid(cmds, options.md_device, options.raidlevel, options.count, attached_devices )
 
 cmds = initialize_filesystem(cmds, options.wipe, options.md_device, options.volgroup,options.logvol, format_cmds, options.filesystem, options.mountpoint)
 
