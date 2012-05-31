@@ -62,7 +62,7 @@ def get_options():
 
 def initialize_raid( cmds, md_device, raidlevel, count, attached_devices ):
 
-    cmds.append("echo  Y | mdadm  --verbose --create  %s --level=%s --chunk=256 --raid-devices=%s %s" % ( md_device, str(raidlevel), str(count), ' '.join(attached_devices) ) )
+    cmds.append("echo  Y | mdadm --verbose --create %s --level=%s --chunk=256 --raid-devices=%s %s" % ( md_device, str(raidlevel), str(count), ' '.join(attached_devices) ) )
     cmds.append("mdadm --detail --scan >  /etc/mdadm.conf")
     cmds.append("dd if=/dev/zero of=%s bs=512 count=1" % options.md_device )
     cmds.append("pvcreate %s" % options.md_device )
@@ -136,7 +136,10 @@ for n in range(1, options.count + 1):
 
 instance_data = boto.utils.get_instance_metadata()
 
-ec2conn = ec2.connection.EC2Connection()
+# connect to region of the current instance rather than default of us-east-1
+zone = instance_data['placement']['availability-zone']
+region_name = zone[:-1]
+ec2conn = ec2.connect_to_region(region_name)
 
 attached_devices = map(attached_name, my_devices)
 
