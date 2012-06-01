@@ -115,7 +115,7 @@ print my_devices
 
 instance_data = boto.utils.get_instance_metadata()
 
-ec2conn = ec2.connection.EC2Connection()
+ec2conn = ec2.connect_to_region(instance_data['placement']['availability-zone'][:-1])
 
 attached_devices = map(attached_name, my_devices)
 
