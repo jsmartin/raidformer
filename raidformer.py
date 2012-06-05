@@ -139,6 +139,8 @@ instance_data = boto.utils.get_instance_metadata()
 # connect to region of the current instance rather than default of us-east-1
 zone = instance_data['placement']['availability-zone']
 region_name = zone[:-1]
+
+print "Connecting to region %s" % region_name
 ec2conn = ec2.connect_to_region(region_name)
 
 attached_devices = map(attached_name, my_devices)
@@ -153,7 +155,7 @@ if (options.attach or options.snapshot) and not options.test:
             print "Restoring snapshot %s to device %s" % (device, snapshot)
             vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'], snapshot=snapshot)
         else:
-            print "Creating new volume on device ", device
+            print "Creating new volume on device %s" % device
             vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'])
         print "Created volume: ", vol.id
         ec2conn.attach_volume(vol.id, instance_data['instance-id'], device)
@@ -165,7 +167,7 @@ if (options.attach or options.snapshot) and not options.test:
     for device in attached_devices:
         found = False
     
-        while found == False:
+        while found is False:
         
             print "Waiting for %s to become available." % device
             if os.path.exists(device):
@@ -184,6 +186,6 @@ cmds = initialize_filesystem(cmds, options.wipe, options.md_device, options.volg
 
 for cmd in cmds:
     print 'Running:', cmd
-    if options.test == False:
+    if options.test is False:
         output = runcmd(cmd)
         print output
