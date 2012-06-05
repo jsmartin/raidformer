@@ -9,15 +9,18 @@ from subprocess import Popen, PIPE, STDOUT
 import os.path
 import glob
 
+
 def runcmd(cmd):
     p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
     output = p.stdout.read()
     output.strip()
     return output
 
+
 def attached_name(item):
     item = item.replace("sd","xvd")
     return item
+
 
 def get_options():
     """ command-line options """
@@ -25,7 +28,6 @@ def get_options():
     usage = "usage: %prog [options]"
     OptionParser = optparse.OptionParser
     parser = OptionParser(usage)
-
     parser.add_option("-a", "--attach",  action="store_true",
         dest="attach", default=False, help="Do the volume creation and attachment.")
     parser.add_option("-c", "--count", action="store", type="int",
@@ -55,34 +57,29 @@ def get_options():
     parser.add_option("", "--from-snapshot",  action="store",
         dest="snapshot", default=None,
         help="Create volumes from one or more ebs snapshots. Order preservation is essential")
-
     options, args = parser.parse_args()
-
     return options, args
 
-def initialize_raid( cmds, md_device, raidlevel, count, attached_devices ):
 
+def initialize_raid( cmds, md_device, raidlevel, count, attached_devices ):
     cmds.append("echo  Y | mdadm --verbose --create %s --level=%s --chunk=256 --raid-devices=%s %s" % ( md_device, str(raidlevel), str(count), ' '.join(attached_devices) ) )
     cmds.append("mdadm --detail --scan >  /etc/mdadm.conf")
-    cmds.append("dd if=/dev/zero of=%s bs=512 count=1" % options.md_device )
-    cmds.append("pvcreate %s" % options.md_device )
+    cmds.append("dd if=/dev/zero of=%s bs=512 count=1" % md_device )
+    cmds.append("pvcreate %s" % md_device )
     return cmds
 
-def initialize_filesystem(cmds, wipe, md_device, volgroup, logvol, format_cmds, filesystem, mountpoint):
 
-    cmds.append("vgcreate %s %s" % ( volgroup, options.md_device  ) )
+def initialize_filesystem(cmds, wipe, md_device, volgroup, logvol, format_cmds, filesystem, mountpoint):
+    cmds.append("vgcreate %s %s" % ( volgroup, md_device  ) )
     cmds.append("lvcreate -l 100%%vg -n %s %s" % (logvol, volgroup) )
     if wipe == True:
         cmds.append("%s /dev/%s/%s" % (format_cmds[filesystem],volgroup, logvol))
 
     cmds.append('echo "/dev/%s/%s %s       %s    %s        1 1" >> /etc/fstab' % (volgroup, logvol, mountpoint, filesystem, format_fstab_settings[filesystem]) )
     cmds.append('mount %s' % mountpoint)
-    if not os.path.isdir(mountpoint):
-        print "creating mountpoint: %s" % mountpoint
-        os.makedirs(mountpoint)
     return cmds
 
- 
+
 options, args = get_options()
 
 format_cmds = {
@@ -95,16 +92,18 @@ format_fstab_settings = {
     "xfs": "noatime,noexec,nodiratime"
 }
 
+if options.test:
+    print "TEST MODE - The following operations will be performed:"
+
 #device lettering
 #http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/ebs-attaching-volume.html
-
 devices = [ '/dev/sdf', '/dev/sdg', '/dev/sdh', '/dev/sdi', '/dev/sdj', '/dev/sdk', '/dev/sdl', '/dev/sdm', '/dev/sdn', '/dev/sdo', '/dev/sdp' ]
 
 if not options.device in devices:
     print "You must use a valid device.  See http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/ebs-attaching-volume.html."
     sys.exit(1)
 
-if options.attach == True:
+if options.attach is True:
     if len(glob.glob(options.device)) > 0:
         print "You already have devices that start with %s." % options.device
         sys.exit(1)
@@ -143,6 +142,7 @@ region_name = zone[:-1]
 print "Connecting to region %s" % region_name
 ec2conn = ec2.connect_to_region(region_name)
 
+# map ebs devices ids to ubuntu devices
 attached_devices = map(attached_name, my_devices)
 
 vol_ids = []
@@ -162,7 +162,6 @@ if (options.attach or options.snapshot) and not options.test:
         print "Attached volume: ", vol.id
         vol_ids.append(vol.id)
         vol.add_tag("Name", options.tag)
-
     
     for device in attached_devices:
         found = False
@@ -175,16 +174,21 @@ if (options.attach or options.snapshot) and not options.test:
                 break
             else:
                 time.sleep(10)
+
+if not os.path.isdir(options.mountpoint):
+    print "Creating mount point: %s" % options.mountpoint
+    if not options.test:
+        os.makedirs(options.mountpoint)
+else:
+    print "WARNING mount point already exists: %s" % options.mountpoint
     
-    
-cmds = []
+commands = list()
 
-cmds = initialize_raid(cmds, options.md_device, options.raidlevel, options.count, attached_devices )
+commands = initialize_raid(commands, options.md_device, options.raidlevel, options.count, attached_devices )
 
-cmds = initialize_filesystem(cmds, options.wipe, options.md_device, options.volgroup,options.logvol, format_cmds, options.filesystem, options.mountpoint)
+commands = initialize_filesystem(commands, options.wipe, options.md_device, options.volgroup, options.logvol, format_cmds, options.filesystem, options.mountpoint)
 
-
-for cmd in cmds:
+for cmd in commands:
     print 'Running:', cmd
     if options.test is False:
         output = runcmd(cmd)
