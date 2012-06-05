@@ -69,12 +69,19 @@ def initialize_raid( cmds, md_device, raidlevel, count, attached_devices ):
     return cmds
 
 
-def initialize_filesystem(cmds, wipe, md_device, volgroup, logvol, format_cmds, filesystem, mountpoint):
-    cmds.append("vgcreate %s %s" % ( volgroup, md_device  ) )
-    cmds.append("lvcreate -l 100%%vg -n %s %s" % (logvol, volgroup) )
-    if wipe == True:
-        cmds.append("%s /dev/%s/%s" % (format_cmds[filesystem],volgroup, logvol))
+def initialize_raid_from_snapshot( cmds, md_device, attached_devices ):
+    cmds.append("echo  Y | mdadm --verbose --assemble %s %s" % ( md_device, ' '.join(attached_devices) ) )
+    cmds.append("mdadm --detail --scan >  /etc/mdadm.conf")
+    cmds.append("pvcreate %s" % md_device )
+    return cmds
 
+
+def initialize_filesystem(cmds, wipe, md_device, volgroup, logvol, format_cmds, filesystem, mountpoint):
+    device_short = os.path.basename(md_device).title()
+    cmds.append("vgcreate %s%s %s" % ( volgroup, device_short, md_device  ) )
+    cmds.append("lvcreate -l 100%%vg -n %s %s" % (logvol, volgroup) )
+    if wipe is True:
+        cmds.append("%s /dev/%s/%s" % (format_cmds[filesystem], volgroup, logvol))
     cmds.append('echo "/dev/%s/%s %s       %s    %s        1 1" >> /etc/fstab' % (volgroup, logvol, mountpoint, filesystem, format_fstab_settings[filesystem]) )
     cmds.append('mount %s' % mountpoint)
     return cmds
@@ -184,7 +191,10 @@ else:
     
 commands = list()
 
-commands = initialize_raid(commands, options.md_device, options.raidlevel, options.count, attached_devices )
+if options.snapshot:
+  commands = initialize_raid_from_snapshot(commands, options.md_device, attached_devices )
+else:
+  commands = initialize_raid(commands, options.md_device, options.raidlevel, options.count, attached_devices )
 
 commands = initialize_filesystem(commands, options.wipe, options.md_device, options.volgroup, options.logvol, format_cmds, options.filesystem, options.mountpoint)
 
