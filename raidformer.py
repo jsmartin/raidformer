@@ -79,10 +79,10 @@ def initialize_raid_from_snapshot( cmds, md_device, attached_devices ):
 def initialize_filesystem(cmds, wipe, md_device, volgroup, logvol, format_cmds, filesystem, mountpoint):
     device_short = os.path.basename(md_device).title()
     cmds.append("vgcreate %s%s %s" % ( volgroup, device_short, md_device  ) )
-    cmds.append("lvcreate -l 100%%vg -n %s %s" % (logvol, volgroup) )
+    cmds.append("lvcreate -l 100%%vg -n %s %s%s" % (logvol, volgroup, device_short) )
     if wipe is True:
-        cmds.append("%s /dev/%s/%s" % (format_cmds[filesystem], volgroup, logvol))
-    cmds.append('echo "/dev/%s/%s %s       %s    %s        1 1" >> /etc/fstab' % (volgroup, logvol, mountpoint, filesystem, format_fstab_settings[filesystem]) )
+        cmds.append("%s /dev/%s%s/%s" % (format_cmds[filesystem], volgroup, device_short, logvol))
+    cmds.append('echo "/dev/%s%s/%s %s       %s    %s        1 1" >> /etc/fstab' % (volgroup, device_short, logvol, mountpoint, filesystem, format_fstab_settings[filesystem]) )
     cmds.append('mount %s' % mountpoint)
     return cmds
 
