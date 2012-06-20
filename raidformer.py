@@ -96,7 +96,7 @@ format_cmds = {
 
 format_fstab_settings = {
     "ext4": "defaults",
-    "xfs": "noatime,noexec,nodiratime"
+    "xfs": "noatime,nodiratime"
 }
 
 if options.test:
