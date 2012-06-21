@@ -1,3 +1,5 @@
+Thanks to beichhor (Benn Eichhorn) for his great contributions!
+
 Hi all.  I wanted a way to dynamically create ebs-backed raid sets that were also growable.  My problem using CloudFormaiton templates with EBS devices was that I had to specify each one of the devices, mounts, and mount points.  This gets out of hand especially when testing multiple variations of RAID types and number of volumes.  I'm aware that this leaves the drives out of the control of CloudFormation during deletion, but at this point that is fine with me because I don't want to delete my EBS volumes anyhow.  Oh, and for those of you not using CloudFormation, this script works perfectly without it.
 
 
