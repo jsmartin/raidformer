@@ -42,6 +42,8 @@ def get_options():
         dest="mountpoint", help="Mountpoint")
     parser.add_option("", "--md", action="store", type="string",
         dest="md_device", default="/dev/md0", help="md device name ")
+    parser.add_option("-p", "--piops", action="store", type="string",
+        dest="piops", default="100", help="number of piops")
     parser.add_option("-r", "--raidlevel", action="store", type="int",
         dest="raidlevel", help="RAID level")
     parser.add_option("-s", "--size", action="store", type="int",
@@ -76,15 +78,33 @@ def initialize_raid_from_snapshot( cmds, md_device, attached_devices ):
     return cmds
 
 
-def initialize_filesystem(cmds, wipe, md_device, volgroup, logvol, format_cmds, filesystem, mountpoint):
-    device_short = os.path.basename(md_device).title()
-    cmds.append("vgcreate %s %s" % ( volgroup, md_device ) )
-    cmds.append("lvcreate -l 100%%vg -n %s%s %s" % (logvol, device_short, volgroup) )
-    if wipe is True:
-        cmds.append("%s /dev/%s/%s%s" % (format_cmds[filesystem], volgroup, logvol, device_short))
-    cmds.append('echo "/dev/%s/%s%s %s       %s    %s        1 1" >> /etc/fstab' % (volgroup, logvol, device_short, mountpoint, filesystem, format_fstab_settings[filesystem]) )
+def append_fstab(device, mountpoint, filesystem, settings):
+    return('echo "%s %s       %s    %s        1 1" >> /etc/fstab' % (device, mountpoint, filesystem, settings))
+
+
+
+
+
+def initialize_filesystems(cmds, wipe, format_cmds, filesystem, mountpoint, md_device=None, volgroup=None, single_device=None): 
+    if md_device != None:
+        device_short = os.path.basename(md_device).title()
+    if volgroup != None:
+        cmds.append("vgcreate %s %s" % ( volgroup, md_device ) )
+        cmds.append("lvcreate -l 100%%vg -n %s%s %s" % (logvol, device_short, volgroup) )
+        if wipe is True:
+            cmds.append("%s /dev/%s/%s%s" % (format_cmds[filesystem], volgroup, logvol, device_short))
+            cmds.append(append_fstab("/dev/%s/%s/%s" % (volgroup, logvol, device_short),  mountpoint, filesystem, format_fstab_settings[filesystem]) )
+    if single_device != None:
+        if wipe is True:
+            cmds.append("%s %s" % (format_cmds[filesystem], single_device))
+            cmds.append(append_fstab(single_device, mountpoint, filesystem, format_fstab_settings[filesystem]) )
+
+
     cmds.append('mount %s' % mountpoint)
     return cmds
+
+
+
 
 
 options, args = get_options()
@@ -154,6 +174,14 @@ attached_devices = map(attached_name, my_devices)
 
 vol_ids = []
 
+if options.piops:
+    volume_type="io1"
+    iops = options.piops
+
+else:
+    volume_type = "standard"
+    iops = None
+
 if (options.attach or options.snapshot) and not options.test:
 
     for key, device in enumerate(my_devices):
@@ -163,7 +191,8 @@ if (options.attach or options.snapshot) and not options.test:
             vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'], snapshot=snapshot)
         else:
             print "Creating new volume on device %s" % device
-            vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'])
+            vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'], volume_type=volume_type, iops=iops)
+     
         print "Created volume: ", vol.id
         ec2conn.attach_volume(vol.id, instance_data['instance-id'], device)
         print "Attached volume: ", vol.id
@@ -193,10 +222,17 @@ commands = list()
 
 if options.snapshot:
   commands = initialize_raid_from_snapshot(commands, options.md_device, attached_devices )
-else:
+elif options.raidlevel:
   commands = initialize_raid(commands, options.md_device, options.raidlevel, options.count, attached_devices )
+else:
+  pass
 
-commands = initialize_filesystem(commands, options.wipe, options.md_device, options.volgroup, options.logvol, format_cmds, options.filesystem, options.mountpoint)
+
+#commands = initialize_filesystems(commands, options.wipe, options.md_device, options.volgroup, options.logvol, attached_devices[0], format_cmds, options.filesystem, options.mountpoint)
+
+commands = initialize_filesystems(commands, options.wipe, format_cmds, options.filesystem, options.mountpoint, md_device=None, volgroup=None, single_device=attached_devices[0])
+
+
 
 for cmd in commands:
     print 'Running:', cmd
