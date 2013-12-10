@@ -165,11 +165,19 @@ if (options.attach or options.snapshot) and not options.test:
             print "Creating new volume on device %s" % device
             vol = ec2conn.create_volume(options.size, instance_data['placement']['availability-zone'])
         print "Created volume: ", vol.id
+
+        ready = False
+
+        while not ready:
+            created = ec2conn.get_all_volumes([vol.id])[0]
+            if created.status == "available":
+                ready = True
+
         ec2conn.attach_volume(vol.id, instance_data['instance-id'], device)
         print "Attached volume: ", vol.id
         vol_ids.append(vol.id)
         vol.add_tag("Name", options.tag)
-    
+
     for device in attached_devices:
         found = False
     
