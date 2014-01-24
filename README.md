@@ -6,56 +6,56 @@ Hi all.  I wanted a way to dynamically create ebs-backed raid sets that were als
 
 I set out to create a script that could run in UserData does just this.  Here's a simple example:
 
-ebs_add.py --size 1 --count 2 --raidlevel 1 --mountpoint /nfsexports --wipe --tag foofoo --attach
+`raid_former.py --size 1 --count 2 --raidlevel 1 --mountpoint /nfsexports --wipe --tag foofoo --attach`
 
 In this case, the script will:
 
-Allocate 2 EBS volumes with size of 1GB each.  
-Add a Tag of "Name=foofoo" to the volumes.
-Create the devices as /dev/sdf1 and /dev/sdf2.  
-Create a raid 1 device of /dev/md0
-Initialize /dev/md0 as a physical volume
-Create a volume group
-Create a logical volume
-Format the logical volume
-Add the fstab entry
-Mount the filesystem.
+* Allocate 2 EBS volumes with size of 1GB each.  
+* Add a Tag of "Name=foofoo" to the volumes.
+* Create the devices as /dev/sdf1 and /dev/sdf2.  
+* Create a raid 1 device of /dev/md0
+* Initialize /dev/md0 as a physical volume
+* Create a volume group
+* Create a logical volume
+* Format the logical volume
+* Add the fstab entry
+* Mount the filesystem.
 
 Alternatively, if you just wanted to create the raid device and add it to the VolumeGroup you could:
 
-./raidformer.py --size 1 --count 2 --raidlevel 1  --tag foofoo --attach
+`raidformer.py --size 1 --count 2 --raidlevel 1  --tag foofoo --attach`
 
 Or you could do a dry run of the commands and not allocate EBS volumes:
 
-./raidformer.py --size 1 --count 2 --raidlevel 1 --mountpoint /nfsexports --wipe --tag foofoo --test
+`raidformer.py --size 1 --count 2 --raidlevel 1 --mountpoint /nfsexports --wipe --tag foofoo --test`
 
 
 If you just wanted to create & format the raid /logical volumes because you are already attaching volumes in your CloudFormation template: 
 
-./raidformer.py --size 1 --count 2 --raidlevel 1 --mountpoint /nfsexports --wipe
+`raidformer.py --size 1 --count 2 --raidlevel 1 --mountpoint /nfsexports --wipe`
 
 If you want to restore a raid configuration from a set of snapshots then provide a list of snapshot ids in the same order as they were originally mounted. Order preservation is essential to ensure snapshot is restored.
 
-./raidformer.py --size=50 --raidlevel=10 --from-snapshot=snap-52bc5047,snap-52bc504f,snap-2bbc5051,snap-17bc5055 --filesystem=xfs --attach --mountpoint=/mnt/wowzers
+`raidformer.py --size=50 --raidlevel=10 --from-snapshot=snap-52bc5047,snap-52bc504f,snap-2bbc5051,snap-17bc5055 --filesystem=xfs --attach --mountpoint=/mnt/wowzers`
 
 The script requires both a aws_access_key_id and  aws_secret_access_key set in your environment or in ~/.boto file.  The user needs the following IAM permissions:
 
-{
-  "Statement": [
-    {
-      "Sid": "Stmt1336836314319",
-      "Action": [
-        "ec2:AttachVolume",
-        "ec2:CreateTags",
-        "ec2:CreateVolume"
-      ],
-      "Effect": "Allow",
-      "Resource": [
-        "*"
-      ]
-    }
-  ]
-}
+	{
+	  "Statement": [
+	    {
+	      "Sid": "Stmt1336836314319",
+	      "Action": [
+	        "ec2:AttachVolume",
+	        "ec2:CreateTags",
+	        "ec2:CreateVolume"
+	      ],
+	      "Effect": "Allow",
+	      "Resource": [
+	        "*"
+	      ]
+	    }
+	  ]
+	}
 
 * This was tested on AMI: amzn-ami-pv-2012.03.1.x86_64-ebs (ami-e565ba8c)
 
@@ -112,29 +112,29 @@ and the following in the user data section:
 list of program options:
 
 
-Usage: raidformer.py [options]
-
-Options:
-  -h, --help            show this help message and exit
-  -a, --attach          Do the volume creation and attachment.
-  -c COUNT, --count=COUNT
-                        Number of EBS volumes
-  -d DEVICE, --device=DEVICE
-                        block device to start with
-  -f FILESYSTEM, --filesystem=FILESYSTEM
-                        filesystem type
-  -l LOGVOL, --logvol=LOGVOL
-                        Logical Volume Name
-  -m MOUNTPOINT, --mountpoint=MOUNTPOINT
-                        Mountpoint
-  --md=MD_DEVICE        md device name
-  -r RAIDLEVEL, --raidlevel=RAIDLEVEL
-                        RAID level
-  -s SIZE, --size=SIZE  Size of EBS volumes
-  --from-snapshot=SNAPSHOT_ID, --from-snapshot=SNAP1,SNAP2,...
-                        Create volumes from one or more ebs snapshots
-  -t, --test            Does a dry run of the mdadm lvm commands.
-  --tag=TAG             Tag name for the ebs devices
-  -v VOLGROUP, --volgroup=VOLGROUP
-                        Volume Group Name
-  -w, --wipe            format the new filesystem
+	Usage: raidformer.py [options]
+	
+	Options:
+	  -h, --help            show this help message and exit
+	  -a, --attach          Do the volume creation and attachment.
+	  -c COUNT, --count=COUNT
+	                        Number of EBS volumes
+	  -d DEVICE, --device=DEVICE
+	                        block device to start with
+	  -f FILESYSTEM, --filesystem=FILESYSTEM
+	                        filesystem type
+	  -l LOGVOL, --logvol=LOGVOL
+	                        Logical Volume Name
+	  -m MOUNTPOINT, --mountpoint=MOUNTPOINT
+	                        Mountpoint
+	  --md=MD_DEVICE        md device name
+	  -r RAIDLEVEL, --raidlevel=RAIDLEVEL
+	                        RAID level
+	  -s SIZE, --size=SIZE  Size of EBS volumes
+	  --from-snapshot=SNAPSHOT_ID, --from-snapshot=SNAP1,SNAP2,...
+	                        Create volumes from one or more ebs snapshots
+	  -t, --test            Does a dry run of the mdadm lvm commands.
+	  --tag=TAG             Tag name for the ebs devices
+	  -v VOLGROUP, --volgroup=VOLGROUP
+	                        Volume Group Name
+	  -w, --wipe            format the new filesystem
